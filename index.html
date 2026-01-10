@@ -2,7 +2,9 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>我们一起学日语！</title>
     <style>
         :root {
@@ -24,17 +26,32 @@
             --btn-shadow: 0 4px 12px rgba(0,0,0,0.1);
         }
 
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; }
+        * { 
+            box-sizing: border-box; 
+            -webkit-tap-highlight-color: transparent; 
+            user-select: none; 
+            /* 禁用 iOS 默认按钮样式 */
+            -webkit-appearance: none;
+        }
+
+        /* 隐藏 Windows 默认滚动条，美化界面 */
+        ::-webkit-scrollbar { display: none; }
+        * { -ms-overflow-style: none; scrollbar-width: none; }
         
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Meiryo", "Microsoft YaHei", sans-serif;
+            /* 字体栈优化：优先系统字体，覆盖 Win/Mac/iOS */
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Microsoft YaHei", sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
             margin: 0;
             display: flex;
             flex-direction: column;
+            /* 适配 iOS Safari 动态高度 */
             height: 100vh;
+            height: 100dvh; 
             overflow: hidden;
+            /* 适配 iPhone 底部黑条 */
+            padding-bottom: env(safe-area-inset-bottom);
         }
 
         /* --- 首页 (菜单) --- */
@@ -47,6 +64,7 @@
             padding: 20px;
             gap: 25px;
             animation: fadeIn 0.4s;
+            overflow-y: auto; /* 允许小屏幕滚动 */
         }
 
         .home-title {
@@ -55,6 +73,7 @@
             color: var(--text-main);
             margin-bottom: 20px;
             letter-spacing: 2px;
+            padding-top: env(safe-area-inset-top); /* 顶部刘海适配 */
         }
 
         .menu-card {
@@ -71,10 +90,16 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            position: relative; /* 修复层级 */
+            z-index: 1;
         }
 
         .menu-card:active { transform: scale(0.98); }
-        .menu-card:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
+        
+        /* 仅在支持 hover 的设备（Windows/Mac）启用悬停效果，避免 iOS 点击粘滞 */
+        @media (hover: hover) {
+            .menu-card:hover { transform: translateY(-3px); box-shadow: 0 15px 30px rgba(0,0,0,0.1); }
+        }
 
         .menu-icon { font-size: 2.5rem; margin-right: 15px;}
         .menu-info { text-align: left; flex: 1; }
@@ -86,24 +111,27 @@
             display: none;
             flex-direction: column;
             height: 100%;
+            width: 100%;
             animation: slideIn 0.3s;
         }
 
         header {
             padding: 10px 15px;
+            padding-top: max(10px, env(safe-area-inset-top)); /* 适配刘海 */
             display: flex;
             justify-content: space-between;
             align-items: center;
-            height: 60px;
+            height: auto;
+            min-height: 60px;
             background-color: var(--bg-color);
             z-index: 10;
         }
 
-        .header-group { display: flex; gap: 10px; align-items: center; }
+        .header-group { display: flex; gap: 8px; align-items: center; }
 
         .progress-wrapper {
             flex: 1;
-            margin: 0 15px;
+            margin: 0 10px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -140,8 +168,9 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
+            margin: 0; /* 重置浏览器默认margin */
         }
-        .btn-icon:active { transform: scale(0.9); }
+        .btn-icon:active { transform: scale(0.9); background: #f0f0f0; }
 
         main {
             flex: 1;
@@ -149,8 +178,9 @@
             justify-content: center;
             align-items: center;
             perspective: 1000px;
-            padding: 20px;
+            padding: 10px 20px;
             position: relative;
+            overflow: hidden;
         }
 
         .card-container {
@@ -180,6 +210,8 @@
             padding: 25px;
             text-align: center;
             border: 1px solid rgba(255,255,255,0.8);
+            /* 解决 iOS 3D 变换时的闪烁问题 */
+            -webkit-transform: translate3d(0,0,0);
         }
 
         .card-back {
@@ -216,9 +248,9 @@
         }
 
         /* 针对不同类型的特殊样式 */
-        .type-kana .content-main { font-size: 7rem; line-height: 1; } 
+        .type-kana .content-main { font-size: 6rem; line-height: 1; } 
         .type-vocab .content-main { font-size: 3.5rem; } 
-        .type-sentence .content-main { font-size: 1.6rem; overflow-y: auto; max-height: 60%; } 
+        .type-sentence .content-main { font-size: 1.4rem; overflow-y: auto; max-height: 60%; padding: 0 5px; } 
 
         .click-hint {
             position: absolute;
@@ -236,11 +268,14 @@
 
         /* 底部控制栏 */
         .controls {
-            padding: 0 20px 40px;
+            padding: 0 20px;
+            padding-bottom: max(20px, env(safe-area-inset-bottom)); /* 适配底部横条 */
+            height: auto;
             min-height: 100px;
             display: flex;
             justify-content: center;
             align-items: flex-start;
+            z-index: 10;
         }
 
         .btn-show {
@@ -249,6 +284,7 @@
             border: none; border-radius: 50px;
             font-size: 1.1rem; font-weight: bold;
             box-shadow: var(--btn-shadow); cursor: pointer;
+            -webkit-appearance: none; /* iOS 按钮样式重置 */
         }
 
         .grade-actions {
@@ -262,6 +298,7 @@
             color: white; font-weight: bold; font-size: 1rem;
             cursor: pointer; box-shadow: var(--btn-shadow);
             display: flex; flex-direction: column; align-items: center;
+            -webkit-appearance: none;
         }
         .btn-grade span { font-size: 0.75rem; opacity: 0.85; margin-top: 3px;}
         .btn-forget { background-color: var(--color-forget); }
@@ -276,11 +313,11 @@
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(255,255,255,0.98); z-index: 100;
             display: none; flex-direction: column; animation: fadeIn 0.2s;
+            padding-top: env(safe-area-inset-top); /* 弹窗也需要适配刘海 */
         }
         .modal-header { padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;}
-        .word-list { flex: 1; overflow-y: auto; padding: 0 20px 40px; }
+        .word-list { flex: 1; overflow-y: auto; padding: 0 20px 40px; -webkit-overflow-scrolling: touch; /* iOS 顺滑滚动 */ }
         
-        /* 列表项样式优化：改为垂直排列以适应长句子 */
         .list-item { 
             padding: 12px 0; 
             border-bottom: 1px solid #f5f5f5; 
@@ -294,6 +331,14 @@
 
         @keyframes fadeIn { from{opacity:0} to{opacity:1} }
         @keyframes slideIn { from{transform: translateX(50px); opacity: 0;} to{transform: translateX(0); opacity: 1;} }
+        
+        /* 针对小屏幕/旧款 iPhone SE 的调整 */
+        @media (max-height: 670px) {
+            .card-container { max-height: 400px; }
+            .content-main { margin: 10px 0; }
+            .type-vocab .content-main { font-size: 2.5rem; }
+            .type-kana .content-main { font-size: 4rem; }
+        }
     </style>
 </head>
 <body>
@@ -533,7 +578,7 @@
 动物与自然,ねこ,猫,名,猫,乃(Ne)口(Ko)，猫奶一口。
 动物与自然,いぬ,犬,名,狗,姨(I)奴(Nu)，当狗奴。`;
 
-        // 句子数据 (72句)
+        // 句子数据 (已修复原始代码中的语法错误)
         const sentencesRaw = [
             { id: 1, cn: "小李是中国人。", jp: "李(り)さんは中国(ちゅうごく)人(じん)です。" },
             { id: 2, cn: "森同学不是学生。", jp: "森(もり)さんは学生(がくせい)ではありません。" },
@@ -606,8 +651,8 @@
             { id: 69, cn: "关窗户吗？", jp: "窓(まど)を閉(し)めましょうか。" },
             { id: 70, cn: "我吃过寿喜烧。", jp: "わたしはすき焼(や)きを食(た)べたことがあります。" },
             { id: 71, cn: "最好多吃蔬菜哦。", jp: "もっと野菜(やさい)を食(た)べたほうがいいですよ。" },
-            { id: 72, cn: "请告诉我钥匙在哪里。", jp: "かぎがどこにあるか教(おし)えてください。" }，
-            { id: 73, cn: "（我想）小李 马上就来。", jp: "李さん は もうすぐ来る と思います。" }
+            { id: 72, cn: "请告诉我钥匙在哪里。", jp: "かぎがどこにあるか教(おし)えてください。" },
+            { id: 73, cn: "（我想）小李 马上就来。", jp: "李さん は もうすぐ来る と思います。" },
             { id: 74, cn: "周末 滑了滑冰，打了打保龄球。", jp: "しゅうまつ に スケート をしたり、ボウリング をしたり しました。" }
         ];
 
@@ -686,6 +731,7 @@
         function fitText(element, text, baseSize) {
             element.textContent = text;
             const len = text.length;
+            // 简单的字号缩放逻辑
             if (len < 10) element.style.fontSize = baseSize;
             else if (len < 20) element.style.fontSize = `calc(${baseSize} * 0.8)`;
             else element.style.fontSize = `calc(${baseSize} * 0.6)`;
@@ -843,7 +889,7 @@
             modal.style.display = (modal.style.display === 'flex') ? 'none' : 'flex';
         }
 
-        // 列表生成逻辑 (修复了句子部分只显示“查看日语”的问题)
+        // 列表生成逻辑
         function generateList() {
             const container = document.getElementById('wordListContainer');
             let html = '';
@@ -884,5 +930,3 @@
     </script>
 </body>
 </html>
-
-
